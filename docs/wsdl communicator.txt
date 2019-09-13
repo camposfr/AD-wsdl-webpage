@@ -1,0 +1,83 @@
+ADGroups Automation WSDL Communicator Script
+
+1.	Purpose
+Describe the functions for ADGroups automation WSDL communicator.
+
+
+2.	Scope
+This sub script communicates via WSDL to the HPSM service.
+
+3.	Prerequisites
+1- Xampp (Apache) PHP V 7.0.15
+2- Access to SQL Server Database 
+3- MS drivers php_sqlsrvr_7_ts_x86.dll plugin 
+4- Enable sqlsrvr plugin and SOAP in PHP config file
+5- Access to WSDL service for HPSM
+
+
+4.	Code Functions
+
+The main functions for this PHP script are:
+1.	GetWsdlInfo()
+2.	CloseWsdlTicket($Ticketq)
+The way to call these functions:
+Functions must be called trough an operation identifier, said operations are processed via PHP URL parameters. 
+A system validates the function to be called in the code (and ticket for CloseWsdlTicket function) then those functions are called, after running these functions always return a status identifier, like the loading sequence for the Linux Kernel.
+1- GetWsdlInfo():
+	This function first communicates with a SQL server database, then declares the settings for the SOAP communication with the WSDL for HPSM. Then the system sends a query to the WSDL inquiring for the open tickets in the automation queue, the WSDL returns the list of tickets to be processed.
+
+Then this function declares a loop for getting the information from each ticket via a SOAP WSDL request, all the required information for ticket processing gets stored in variables and printed to HTML format for debugging and log purposes. Then said variables get validated if every variable appears to be correct then the system creates an entry in a table (ticketCatalog) of the Database. If the data from HPSM comes corrupted or lacks a field then the ticket gets marked as “malformed” . 
+After saving this information, a transaction log is created for each ticket even if it is malformed. The entry goes to a table called TransactionLog in our Database.
+
+If tickets are not found in the queue, the system will print a record in HTML for log and debugging purposes.
+
+The whole function gets validated and is ready to expect failures from the Database and SOAP communications, in said cases an exception would be triggered, a record would be printed with the error.
+
+This function always returns 3 possible string values:
+•	“not_init” -> Operation couldn’t initialize, ticket queue is empty
+•	“ok” -> Operation was successful
+•	“failed” -> Operation failed
+
+These values state the result of calling this function and this status value operates in a similar way of the Linux Kernel errors and verbose. Other functions may use this status to determine which steps to follow, to report errors, store logs, catch exceptions etc.
+
+2- CloseWsdlTicket($Ticketq)
+	This function requires a ticket number via a string. This function first communicates with a SQL server database, then declares the settings for the SOAP communication with the WSDL for HPSM. Then the system sends an instruction to the WSDL requesting to close a specific ticket (the one from the constructor) then the WSDL returns the information of that closed ticket.
+
+The information gets stored in variables and printed to HTML format for log and debugging purposes, then this function updates in the Database the entry for that ticket from the table “ticketCatalog” and marks the ticket as “CLOSED”.
+
+A log gets stored in the “TransactionLog” table.
+
+
+
+he whole function gets validated and is ready to expect failures from the Database and SOAP communications, in said cases an exception would be triggered, a record would be printed with the error.
+
+This function always returns 3 possible string values:
+•	“not_init” -> Operation couldn’t initialize, ticket queue is empty
+•	“ok” -> Operation was successful
+•	“failed” -> Operation failed
+
+These values state the result of calling this function and this status value operates in a similar way of the Linux Kernel errors and verbose. Other functions may use this status to determine which steps to follow, to report errors, store logs, catch exceptions etc.
+
+Unit testing:
+	It is possible to perform a sort of unit testing given the modularity of this code. For example you can call the functions with certain parameters:
+
+	## Tests getting Tickets from HPSM via WSDL
+	$test = GetWsdlInfo();
+	echo "\n", 'Status for test GetWsdlInfo: ',  $test, "\n";
+
+	## Tests closing  a givenTicket from HPSM via WSDL
+	$testTicket = “T1000”;
+	$test2 = CloseWsdlTicket(“T1000”);
+	echo "\n", 'Status for test CloseWsdlTicket: ',  $test2, "\n";
+
+
+Code modularity:
+
+The code has been developed thinking in future upgrades, enhancements and modularity in mind. The execution flux waits for operations via PHP URL parameters in order to be called, no other important steps are performed.
+
+
+
+
+
+
+	
